@@ -1,57 +1,17 @@
-# primitive-cloud-server
+# Hello poto-sim devs (possibly testers)
 
-A primitive Node server for Scratch 3.0 cloud variables; it's not made for large-scale projects and can easily be tricked by those pesky JavaScript programmers.
+devs have on teh 4th page the error potato and crash dummy potato while testers have only the chrash dummy
+the error potato allows devs to buy anything with no money or do any quest instantly
+the crash dummmy potato allows devs and testers to get 999999999 coins
+do not cheat 😡😡😡😡😡😡
+ the normal instructions on schartch are:
+    ★ Welcome to Potato Simulator! ★
 
-[![Run on Repl.it](https://replit.com/badge/github/SheepTester/primitive-cloud-server)](https://replit.com/new/github/SheepTester/primitive-cloud-server)
+How to Play:
+Begin by clicking the green play button(and the arrow). Once your loaded into the game, click on your planting space to plant potato sprouts. After a couple of seconds (7 to 10 seconds), your sprouts will grow into potatoes! once your sprout is a potato, click on it to collect coins. Use your coins in the shop to get more planting space or chests. Chests give you new potatoes that you can find in your inventory (duplicitous of potatoes will not give anything). Click on the potatoes in your inventory to use them. Once using a potato, all potato sprouts will grow into that potato! All potatoes have a rarity. Common potatoes have a blue circle behind them in your inventory, rare potatoes have a yellow circle behind them, epic ones have a purple circle behind them, legendary have a circle that is a gold gradient and specials have a blue and green gradient circle. The better the potato, the more coins it gives you you can also click the arrows in the inventory to go to the different pages and spider potato is the best potato kinda impure potato can give more but spider is more reliable fun fact impure potato has 1.953125e+15 (what ever that number is) diffrent possible outputs if you have a full farm
 
-Video tutorial:
+notes and credis are:
+Click the barn or rocket for a secret quest :) Credits to goobygames for the original code he is a true legend,
+also the potato with a wrench and builder hat is when I don't have a skin for a  potato couple more things all the original design's for the new potato's (almost) came from Rotation22 and all the potato skins came from Spamalamafam and all the new code is done by me one more thing if you want admin comment admin and like and favourite it and you might get admin!
 
-[![thumbnail of video tutorial](https://img.youtube.com/vi/xVJWqN264fM/0.jpg)](https://www.youtube.com/watch?v=xVJWqN264fM)
-
-1. You'll need to have [Node](https://nodejs.org/en/) installed first.
-
-2. ```sh
-   git clone https://github.com/SheepTester/primitive-cloud-server.git
-   cd primitive-cloud-server
-   npm install
-   npm start
-   ```
-
-This makes a local WebSocket server available at `ws://localhost:3000/` and an HTTP server at http://localhost:3000/.
-
-Cloud variables get stored in the [cloud-vars/ folder](./cloud-vars/).
-
-You can pass a few command line arguments; do `npm start -- --help` for a list.
-
-## Updating
-
-You can update to a new version by doing
-
-```sh
-git stash
-git pull
-git stash pop
-git checkout --theirs -- .
-git reset HEAD
-npm install
-```
-
-This "stashes" your local changes, pulls (downloads) the new files from GitHub, then tries to bring back the files from the stash. This might cause issues, so this then checks out "their" files ("their" refers to the stash that you're bringing back). For some reason, Git might get confused after this, so we just unstage all the files. Finally, it installs new dependencies from NPM.
-
-## Details
-
-All WebSocket messages are JSON strings; the server may send multiple JSON objects separated by a newline character, but the client may not do that back.
-
-When the client first connects to the server, Scratch sends a "handshake" message, which I think lets the server know which project it is on so the server can then send a series of "set" messages to initialize the client's cloud variables.
-
-```json
-// client -> server
-{ "method": "handshake", "project_id": "104" }
-
-// server -> client
-{ "method": "set", "name": "☁ cool cloud variable", "value": "45643563456" }
-{ "method": "set", "name": "☁ epic cloud variable", "value": "10239489031" }
-{ "method": "set", "name": "☁ newish variable", "value": "0" }
-```
-
-After that the client can send a "set" message (same structure) to the server, which will broadcast it to the other clients on the project.
+if you are abile to edit this repositry please be careful htis took a long time to make and while we may rollback toa old commit this might take a lot more storage wich we need to perserve on the other hand feel freee to fork this repositry and edit it as you wish is you want to make your own game put error with this game or your own game in the issues tab and it might get resolved.
