@@ -17,13 +17,6 @@ async function startServer ({ port, lockVars, perMessageDeflate }) {
     wsOptions: { perMessageDeflate }
   })
 
-  const oldIndexHtmlPath = path.resolve(__dirname, '../index.html')
-  if (await fsUtil.exists(oldIndexHtmlPath)) {
-    app.get('/', (req, res, next) => {
-      res.sendFile(oldIndexHtmlPath)
-    })
-  }
-
   app.use(express.static(path.resolve(__dirname, '../static/'), {
     extensions: ['html', 'htm']
   }))

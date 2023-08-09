@@ -1,27 +1,22 @@
 const fs = require('fs')
+const aws = require('@aws-sdk/client-s3')
+const client = new aws.S3Client({region: 'eu-west-2'});
+const bucket = 'potato-sim';
 
-module.exports.readFile = filePath => {
-  return new Promise((resolve, reject) => {
-    fs.readFile(filePath, 'utf8', (err, data) => {
-      if (err) reject(err)
-      else resolve(data)
-    })
-  })
+module.exports.readFile = async filePath => {
+  const command = new aws.GetObjectCommand({
+    Bucket: bucket,
+    Key: filePath
+  });
+  const response = await client.send(command);
+  return await response.Body.transformToString();
 }
 
-module.exports.writeFile = (filePath, data) => {
-  return new Promise((resolve, reject) => {
-    fs.writeFile(filePath, data, err => {
-      if (err) reject(err)
-      else resolve()
-    })
-  })
-}
-
-module.exports.exists = filePath => {
-  return new Promise(resolve => {
-    fs.access(filePath, err => {
-      resolve(!err)
-    })
-  })
+module.exports.writeFile = async (filePath, data) => {
+  const command = new aws.PutObjectCommand({
+    Bucket: bucket,
+    Key: filePath,
+    Body: data
+  });
+  await client.send(command);
 }
