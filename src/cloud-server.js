@@ -25,7 +25,7 @@ class ProjectData {
   announce (announcer, messages) {
     for (const connection of this.connections) {
       if (connection !== announcer) {
-        this.server.reply(ws, messages)
+        this.server.reply(connection, messages)
       }
     }
   }
@@ -101,7 +101,7 @@ class CloudServer {
     let handshaken = false
     let project = null
 
-    ws.on('message', data => {
+    ws.on('message', async data => {
       let message
       try {
         message = JSON.parse(data)
@@ -128,14 +128,16 @@ class CloudServer {
         case 'set':
           if (project) {
             if (message.name == '\u2601 _username') {
-              project.setUsername(ws, message.value)
+              await project.setUsername(ws, message.value)
+              project.variables[message.name] = message.value
+            } else {
+              project.variables[message.name] = message.value
+              project.announce(ws, [{
+                method: 'set',
+                name: message.name,
+                value: message.value
+              }])
             }
-            project.variables[message.name] = message.value
-            project.announce(ws, [{
-              method: 'set',
-              name: message.name,
-              value: message.value
-            }])
             project.save()
           }
           break
