@@ -4,6 +4,44 @@ const { readFile, writeFile } = require('./util.js')
 
 const validProjectId = /^\w+$/
 
+class ProjectData {
+  connections = new Set()
+  variables = {}
+
+  constructor(server) {
+    this.saveTimeout = null
+    this.savePath = null
+    this.server = server
+  }
+
+  save () {
+    if (this.saveTimeout) return
+    this.saveTimeout = setTimeout(() => {
+      writeFile(this.savePath, JSON.stringify(this.variables))
+      this.saveTimeout = null
+    }, 1000)
+  }
+
+  announce (announcer, messages) {
+    for (const connection of this.connections) {
+      if (connection !== announcer) {
+        this.server.reply(ws, messages)
+      }
+    }
+  }
+
+  async setUsername (client, username) {
+    this.savePath = `cloud-vars/${username}.json`
+    this.variables = JSON.parse(await readFile(this.savePath).catch(() => '{}'))
+    const changes = Object.entries(this.variables).map(([name, value]) => ({
+      method: 'set',
+      name: name,
+      value
+    }))
+    this.server.reply(client, changes)
+  }
+}
+
 class CloudServer {
   constructor ({ lockVars = false } = {}) {
     this.projects = new Map()
@@ -18,36 +56,39 @@ class CloudServer {
 
     if (!validProjectId.test(id)) return null
 
-    const savePath = path.resolve(__dirname, `../cloud-vars/${id}.json`)
-    let variables
-    try {
-      variables = JSON.parse(await readFile(savePath).catch(() => '{}'))
-    } catch (err) {
-      console.error(`Encountered an error parsing the cloud variable data at cloud-vars/${id}.json:`)
-      console.error(err)
-      console.error('This might mean that the file is corrupt, but it may be recoverable.')
-      return null
-    }
-    const connections = new Set()
-    let saveTimeout = null
-    const projectData = {
-      variables,
-      connections,
-      save: () => {
-        if (saveTimeout) return
-        saveTimeout = setTimeout(() => {
-          writeFile(savePath, JSON.stringify(variables))
-          saveTimeout = null
-        }, 1000)
-      },
-      announce: (announcer, messages) => {
-        for (const ws of connections) {
-          if (ws !== announcer) {
-            this.reply(ws, messages)
-          }
-        }
-      }
-    }
+    // const savePath = path.resolve(__dirname, `../cloud-vars/${id}.json`)
+    // let variables
+    // try {
+    //   variables = JSON.parse(await readFile(savePath).catch(() => '{}'))
+    // } catch (err) {
+    //   console.error(`Encountered an error parsing the cloud variable data at cloud-vars/${id}.json:`)
+    //   console.error(err)
+    //   console.error('This might mean that the file is corrupt, but it may be recoverable.')
+    //   return null
+    // }
+    // const connections = new Set()
+    // let saveTimeout = null
+    // const projectData = {
+    //   variables,
+    //   connections,
+    //   savePath,
+    //   save: () => {
+    //     if (saveTimeout) return
+    //     saveTimeout = setTimeout(() => {
+    //       writeFile(savePath, JSON.stringify(variables))
+    //       saveTimeout = null
+    //     }, 1000)
+    //   },
+    //   announce: (announcer, messages) => {
+    //     for (const ws of connections) {
+    //       if (ws !== announcer) {
+    //         this.reply(ws, messages)
+    //       }
+    //     }
+    //   }
+    // }
+    // projectData.variables = {}
+    const projectData = new ProjectData(this)
     this.projects.set(id, projectData)
     return projectData
   }
@@ -79,12 +120,6 @@ class CloudServer {
               if (projectData) {
                 project = projectData
                 project.connections.add(ws)
-                const changes = Object.entries(project.variables).map(([variable, value]) => ({
-                  method: 'set',
-                  name: variable,
-                  value
-                }))
-                this.reply(ws, changes)
               }
             })
           }
@@ -92,6 +127,9 @@ class CloudServer {
         case 'create':
         case 'set':
           if (project) {
+            if (message.name == '\u2601 _username') {
+              project.setUsername(ws, message.value)
+            }
             project.variables[message.name] = message.value
             project.announce(ws, [{
               method: 'set',
