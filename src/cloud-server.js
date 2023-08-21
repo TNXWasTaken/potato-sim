@@ -4,14 +4,12 @@ const { readFile, writeFile } = require('./util.js')
 
 const validProjectId = /^\w+$/
 
-class ProjectData {
-  connections = new Set()
+class Client {
   variables = {}
 
-  constructor(server) {
+  constructor() {
     this.saveTimeout = null
     this.savePath = null
-    this.server = server
   }
 
   save () {
@@ -22,15 +20,7 @@ class ProjectData {
     }, 1000)
   }
 
-  announce (announcer, messages) {
-    for (const connection of this.connections) {
-      if (connection !== announcer) {
-        this.server.reply(connection, messages)
-      }
-    }
-  }
-
-  async setUsername (client, username) {
+  async setUsername (server, client, username) {
     this.savePath = `cloud-vars/${username}.json`
     this.variables = JSON.parse(await readFile(this.savePath).catch(() => '{}'))
     const changes = Object.entries(this.variables).map(([name, value]) => ({
@@ -38,8 +28,12 @@ class ProjectData {
       name: name,
       value
     }))
-    this.server.reply(client, changes)
+    server.reply(client, changes)
   }
+}
+
+class ProjectData {
+  clients = new Map()
 }
 
 class CloudServer {
@@ -56,7 +50,7 @@ class CloudServer {
 
     if (!validProjectId.test(id)) return null
 
-    const projectData = new ProjectData(this)
+    const projectData = new ProjectData()
     this.projects.set(id, projectData)
     return projectData
   }
@@ -87,7 +81,7 @@ class CloudServer {
             this.getProject(message.project_id).then(projectData => {
               if (projectData) {
                 project = projectData
-                project.connections.add(ws)
+                project.clients.set(ws, new Client(this))
               }
             })
           }
@@ -95,36 +89,14 @@ class CloudServer {
         case 'create':
         case 'set':
           if (project) {
+            const client = project.clients.get(ws)
+
             if (message.name == '\u2601 _username') {
-              await project.setUsername(ws, message.value)
-              project.variables[message.name] = message.value
-            } else {
-              project.variables[message.name] = message.value
-              project.announce(ws, [{
-                method: 'set',
-                name: message.name,
-                value: message.value
-              }])
+              await client.setUsername(this, ws, message.value)
             }
-            project.save()
-          }
-          break
-        case 'rename':
-          if (project && !this.lockVars) {
-            project.variables[message.new_name] = project.variables[message.name]
-            delete project[message.name]
-            project.announce(ws, [{
-              method: 'set',
-              name: message.new_name,
-              value: message.value
-            }])
-            project.save()
-          }
-          break
-        case 'delete':
-          if (project && !this.lockVars) {
-            delete project.variables[message.name]
-            project.save()
+              
+            client.variables[message.name] = message.value
+            client.save()
           }
           break
         default:
@@ -136,7 +108,7 @@ class CloudServer {
 
     ws.on('close', () => {
       if (project) {
-        project.connections.delete(ws)
+        project.clients.delete(ws)
       }
     })
   }
