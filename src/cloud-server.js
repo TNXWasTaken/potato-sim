@@ -56,38 +56,6 @@ class CloudServer {
 
     if (!validProjectId.test(id)) return null
 
-    // const savePath = path.resolve(__dirname, `../cloud-vars/${id}.json`)
-    // let variables
-    // try {
-    //   variables = JSON.parse(await readFile(savePath).catch(() => '{}'))
-    // } catch (err) {
-    //   console.error(`Encountered an error parsing the cloud variable data at cloud-vars/${id}.json:`)
-    //   console.error(err)
-    //   console.error('This might mean that the file is corrupt, but it may be recoverable.')
-    //   return null
-    // }
-    // const connections = new Set()
-    // let saveTimeout = null
-    // const projectData = {
-    //   variables,
-    //   connections,
-    //   savePath,
-    //   save: () => {
-    //     if (saveTimeout) return
-    //     saveTimeout = setTimeout(() => {
-    //       writeFile(savePath, JSON.stringify(variables))
-    //       saveTimeout = null
-    //     }, 1000)
-    //   },
-    //   announce: (announcer, messages) => {
-    //     for (const ws of connections) {
-    //       if (ws !== announcer) {
-    //         this.reply(ws, messages)
-    //       }
-    //     }
-    //   }
-    // }
-    // projectData.variables = {}
     const projectData = new ProjectData(this)
     this.projects.set(id, projectData)
     return projectData
