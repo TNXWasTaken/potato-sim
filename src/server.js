@@ -8,9 +8,9 @@ const colours = require('colors/safe')
 const CloudServer = require('./cloud-server.js')
 const fsUtil = require('./util.js')
 
-async function startServer ({ port, lockVars, perMessageDeflate }) {
+async function startServer ({ port, perMessageDeflate }) {
   const app = express()
-  const cloudServer = new CloudServer({ lockVars })
+  const cloudServer = new CloudServer()
 
   app.disable('x-powered-by')
   expressWs(app, undefined, {
