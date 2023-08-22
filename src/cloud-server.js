@@ -27,9 +27,15 @@ class Client
     }
   }
 
-  async loadVariables()
+  async setVariable (name, value)
   {
-    this.variables = JSON.parse (await readFile (this.savePath).catch(() => '{}'))
+    this.variables[name] = value
+  }
+
+  async loadVariablesForUser (username, listener)
+  {
+    this.savePath = `cloud-vars/${username}.json`
+    this.variables = JSON.parse (await readFile (this.savePath).catch(() => JSON.stringify(this.variables)))
 
     const changes = Object.entries (this.variables).map (([name, value]) =>
     ({
@@ -48,17 +54,6 @@ class Client
       console.error (`Unable to send message to client: ${message}`)
       console.error (err)
     }
-  }
-
-  async setVariable (name, value)
-  {
-    this.variables[name] = value
-  }
-
-  async loadVariablesForUser (username, listener)
-  {
-    this.savePath = `cloud-vars/${username}.json`
-    return loadVariables()
   }
 }
 
@@ -99,10 +94,10 @@ class CloudServer
           if (message.name == cloudVariable ('_username'))
             await client.loadVariablesForUser (message.value)
           else
-            client.setVariable (message.name, message.value)
+            await client.setVariable (message.name, message.value)
           break
         case 'save':
-          client.saveVariables()
+          await client.saveVariables()
           break
         default:
           console.error (`Unknown server method ${message.method}.`)
@@ -110,7 +105,10 @@ class CloudServer
     })
 
     ws.on ('error', console.error)
-    ws.on ('close', () => { client.saveVariables() })
+    ws.on ('close', () => 
+    { 
+      client.saveVariables() 
+    })
   }
 }
 
