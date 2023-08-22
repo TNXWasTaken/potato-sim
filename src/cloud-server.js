@@ -1,14 +1,20 @@
 const { readFile, writeFile } = require('./util.js')
 
+function cloudVariable (name)
+{
+  return `\u2601 ${name}`
+}
+
 class Client
 {
-  constructor()
+  constructor (connection)
   {
-    this.savePath = null
+    this.connection = connection
     this.variables = {}
+    this.savePath = null
   }
 
-  save()
+  async saveVariables()
   {
     try
     {
@@ -16,20 +22,15 @@ class Client
     }
     catch (err)
     {
-      console.error (`Unable to save to "${this.savePath}"`)
+      console.error (`Unable to save variables to "${this.savePath}"`)
       console.error (err)
     }
   }
 
-  setVariable (name, value)
+  async loadVariables()
   {
-    this.variables[name] = value
-  }
-
-  async setUsername (server, connection, username)
-  {
-    this.savePath = `cloud-vars/${username}.json`
     this.variables = JSON.parse (await readFile (this.savePath).catch(() => '{}'))
+
     const changes = Object.entries (this.variables).map (([name, value]) =>
     ({
       method: 'set',
@@ -37,18 +38,27 @@ class Client
       value
     }))
 
-    const message = changes.map (change => JSON.stringify (message) + '\n').join('')
-
+    const message = changes.map (change => JSON.stringify (change)).join('\n')
     try
     {
-      connection.send (message)
+      this.connection.send(`${message}\n`)
     }
     catch (err)
     {
-      console.error ('Unable to send data to client')
-      console.error (message)
+      console.error (`Unable to send message to client: ${message}`)
       console.error (err)
     }
+  }
+
+  async setVariable (name, value)
+  {
+    this.variables[name] = value
+  }
+
+  async loadVariablesForUser (username, listener)
+  {
+    this.savePath = `cloud-vars/${username}.json`
+    return loadVariables()
   }
 }
 
@@ -61,7 +71,7 @@ class CloudServer
 
   handleWsConnection (ws)
   {
-    const client = new Client()
+    const client = new Client (ws)
 
     ws.on ('message', async data =>
     {
@@ -73,10 +83,10 @@ class CloudServer
       }
       catch (err)
       {
-        console.error ('I received invalid JSON over the Websocket connection.')
+        console.error ('Received invalid JSON over the Websocket connection.')
+        console.error ('This might mean that someone is trying to tamper with the server!')
         console.error (data)
         console.error (err)
-        console.error ('This might mean that someone is trying to tamper with your server.')
         return
       }
 
@@ -86,18 +96,21 @@ class CloudServer
           break
         case 'create':
         case 'set':
-          if (message.name == '\u2601 _username')
-            await client.setUsername (this, ws, message.value)
+          if (message.name == cloudVariable ('_username'))
+            await client.loadVariablesForUser (message.value)
           else
             client.setVariable (message.name, message.value)
           break
+        case 'save':
+          client.saveVariables()
+          break
         default:
-          console.error (`I received an unknown method ${message.method}.`)
+          console.error (`Unknown server method ${message.method}.`)
       }
     })
 
     ws.on ('error', console.error)
-    ws.on ('close', () => { client.save() })
+    ws.on ('close', () => { client.saveVariables() })
   }
 }
 
