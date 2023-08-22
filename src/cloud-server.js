@@ -36,7 +36,19 @@ class Client
       name: name,
       value
     }))
-    connection.send (changes.map (change => JSON.stringify (message) + '\n').join(''))
+
+    const message = changes.map (change => JSON.stringify (message) + '\n').join('')
+
+    try
+    {
+      connection.send (message)
+    }
+    catch (err)
+    {
+      console.error ('Unable to send data to client')
+      console.error (message)
+      console.error (err)
+    }
   }
 }
 
