@@ -18,7 +18,7 @@ class Client
   {
     try
     {
-      writeFile (this.savePath, JSON.stringify (this.variables))
+      await writeFile (this.savePath, JSON.stringify (this.variables))
     }
     catch (err)
     {
